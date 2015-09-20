@@ -1,11 +1,3 @@
----
-title: 'Reproducible Research: Peer Assessment 1'
-output: html_document
----
-
-##Loading and preprocessing the data
-- I maked data frame called "raw" and transformated the format of 'date' column to 'Date' format.
-```{r echo = TRUE}
 dir <- getwd()
 url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
 
@@ -18,50 +10,27 @@ if(!file.exists(paste(dir, "./activity.csv", sep = ""))){
 #Q1. Loading and preprocessing the data
 raw <- read.csv("activity.csv")
 raw <- transform(raw, date = as.Date(raw$date))
-```
 
-
-##What is mean total number of steps taken per day?
-- I used the 'dplyr' package to trim the data frame.
-```{r echo = TRUE, message = FALSE}
+#Q2. What is mean total number of steps taken per day?
 if(!require(dplyr)){install.packages("dplyr")}
 q2 <- group_by(raw, date) %>% summarise(daily.steps = sum(steps))
 
 hist(q2$daily.steps, main = "Histogram of total number of steps per day(Excepted N.A)", xlab = "Daily total steps")
-```
 
-- The mean and median of the total number of steps taken per day are below.
-```{r echo = TRUE}
 q2.mean <- mean(q2$daily.steps, na.rm = T)
 q2.median <- median(q2$daily.steps, na.rm = T)
 
-print(paste("Mean :", q2.mean, ", Median :", q2.median))
-```
-
-
-##What is the average daily activity pattern?
-- The histogram showing the activity pattern is below.
-```{r echo = TRUE}
+#Q3. What is the average daily activity pattern?
 q3 <- group_by(raw, interval) %>% summarise(average.steps = mean(steps, na.rm = T))
 
 with(q3, plot(interval, average.steps, type = "l", main = "Average daily activity pattern", 
               xlab = "Interval(=5mins)", ylab = "Average steps"))
-```
 
-- The 5-minute interval that contains the maximum number of steps and the maximum number are below.
-```{r echo = TRUE}
-q3[grep(max(q3$average.steps, na.rm = T), q3$average.steps), ]
-```
+q3[grep(max(q3$average.steps, na.rm = T), q3$interval.steps), ]
 
-
-##Imputing missing values
-- Below is the number of missing values in the 'steps' column of data.
-```{r echo = TRUE}
+#Q4. Imputing missing values
 sum(is.na(raw$steps))
-```
 
-- Below is process of comparing difference with 'steps' data contained 'N.A' and 'steps' data with 'N.A' that has been replaced by averages of each interval.
-```{r echo = TRUE}
 raw2 <- raw
 for(i in q3$interval){
         raw2[is.na(raw2$steps) & raw2$interval == i, 1] <- round(q3[q3$interval == i, 2])
@@ -72,10 +41,7 @@ q4 <- group_by(raw2, date) %>% summarise(daily.steps = sum(steps))
 par(mfrow = c(2, 1))
 hist(q4$daily.steps, main = "Histogram of total number of steps per day(Imputed N.A)", xlab = "Daily total steps")
 hist(q2$daily.steps, main = "Histogram of total number of steps per day(Excepted N.A)", xlab = "Daily total steps")
-```
 
-- The mean and median of the two data frame are below.
-```{r echo = TRUE}
 q4.mean <- mean(q4$daily.steps)
 q4.median <- median(q4$daily.steps)
 
@@ -83,12 +49,9 @@ result.table <- matrix(data = c(q2.mean, q2.median, q4.mean, q4.median), nrow = 
                        dimnames = list(c("Mean", "Median"), c("Excepted N.A", "Imputed N.A")))
 
 print(result.table)
-```
 
+#Q5. Are there differences in activity patterns between weekdays and weekends?
 
-##What is the average daily activity pattern?
-- I used the 'lattice' package to plot the data showing difference of activity pattern between weekdays and weekend.
-```{r echo = TRUE, message = FALSE}
 raw2 <- mutate(raw2, day = weekdays(date, abbreviate = T))
 raw2[raw2$day == "Sat" | raw2$day == "Sun", 4] <- "weekend"
 raw2[raw2$day != "weekend", 4] <- "weekday"
@@ -98,4 +61,4 @@ q5 <- group_by(raw2, interval, day) %>% summarise(average.steps = mean(steps))
 if(!require(lattice)){install.packages("lattice")}
 
 xyplot(average.steps ~ interval | day, q5, layout = c(1, 2), type = "l", ylab = "Number of steps")
-```
+
